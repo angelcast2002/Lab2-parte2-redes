@@ -1,4 +1,6 @@
 const net = require("node:net");
+const mensajesValidos = [];
+const mensajesInvalidos = [];
 
 const verificarFletcher16 = (mensaje) => {
   let mensajeEnBytes = [];
@@ -45,25 +47,27 @@ const server = net.createServer((socket) => {
 
   // Evento al recibir datos del cliente
   socket.on("data", (data) => {
-    console.log("Datos recibidos:", data.toString());
-    console.log("Verificando checksum...");
     const mensajeVerificado = verificarFletcher16(data.toString());
-    console.log("Mensaje Sin Checksum: ", mensajeVerificado.mensajeOriginal);
     if (mensajeVerificado.esValido) {
       console.log("El mensaje es válido");
       console.log(
         "Mensaje original:",
         convertirBinarioAString(mensajeVerificado.mensajeOriginal)
       );
+      mensajesValidos.push(mensajeVerificado.mensajeOriginal);
     } else {
       console.log("El mensaje ha sido alterado");
+      mensajesInvalidos.push(data.toString());
     }
-    console.log(verificarFletcher16(data.toString()));
   });
 
   // Evento cuando se cierra la conexión del cliente
   socket.on("close", () => {
     console.log("Cliente desconectado");
+    // console.log("Mensajes válidos:", mensajesValidos);
+    console.log("Cantidad de mensajes validos:", mensajesValidos.length);
+    // console.log("Mensajes inválidos:", mensajesInvalidos);
+    console.log("Cantidad de mensajes inválidos:", mensajesInvalidos.length);
   });
 
   // Manejar errores de conexión

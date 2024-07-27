@@ -1,6 +1,5 @@
 import random
 import socket
-import time
 
 HOST = 'localhost'
 PORT = 9000
@@ -27,6 +26,7 @@ def covertidorBinario(mensaje):
     return mensajeBinario
 
 def ruido(mensaje, probabilidad):
+    random.seed(0)
     mensajeRuidoso = ""
     for bit in mensaje:
         if random.random() < probabilidad:
@@ -41,7 +41,6 @@ def comunicarMensaje(mensaje):
         Csocket.connect((HOST, PORT))
         Csocket.sendall(mensaje.encode())
         print("Mensaje enviado con éxito.")
-        # time.sleep(2)
     except Exception as e:
         print(f"Error al comunicar el mensaje: {e}")
     finally:
@@ -49,21 +48,40 @@ def comunicarMensaje(mensaje):
     
 
 def main():
-    # mensaje = "1100001110110001"
-    mensaje = input("Ingrese el mensaje a enviar: ")
-    probabilidad = int(input("Ingrese la probabilidad de ruido (0 - 100): "))
-    probabilidad = probabilidad / 100
-    mensaje = covertidorBinario(mensaje)
-    print("Mensaje en binario: ", mensaje)
+    # Descomentar para poder enviar mensaje 1 a 1
+    # mensaje = input("Ingrese el mensaje a enviar: ")
+    # probabilidad = int(input("Ingrese la probabilidad de ruido (0 - 100): "))
+    # probabilidad = probabilidad / 100
+    # mensaje = covertidorBinario(mensaje)
 
-    checksum = fletcher16(mensaje)
+    # checksum = fletcher16(mensaje)
 
-    checksumBinario = format(checksum, '016b')
-    # print("Checksum: ", checksumBinario)
-    mensajeAEnviar = mensaje + checksumBinario
-    mensajeAEnviar = ruido(mensajeAEnviar, probabilidad)
-    comunicarMensaje(mensajeAEnviar)
-    print("Mensaje a enviar: ", mensajeAEnviar)
+    # checksumBinario = format(checksum, '016b')
+    # mensajeAEnviar = mensaje + checksumBinario
+    # mensajeAEnviar = ruido(mensajeAEnviar, probabilidad)
+    # comunicarMensaje(mensajeAEnviar)
+    # print("Mensaje: ", mensajeAEnviar)
+    
+    # Envio de mensajes automaticos
+    mensajes = ["Hola", "Mundo", "Como", "Estas", "Hoy", "Es", "Un", "Buen", "Dia", "Para", "Aprender", "Sobre", "Redes", "De", "Computadoras", "Y", "Comunicaciones"]
+    probabilidades = [5, 10, 15, 20, 25, 30, 25, 20, 15, 10, 5, 10, 15, 20, 25, 30, 80]
+    
+    
+    
+    for i in range(len(mensajes)):
+        mensaje = mensajes[i]
+        probabilidad = probabilidades[i] / 10000
+        mensaje = covertidorBinario(mensaje)
+
+        checksum = fletcher16(mensaje)
+
+        checksumBinario = format(checksum, '016b')
+        # print("Checksum: ", checksumBinario)
+        mensajeAEnviar = mensaje + checksumBinario
+        mensajeAEnviar = ruido(mensajeAEnviar, probabilidad)
+        comunicarMensaje(mensajeAEnviar)
+        print("Mensaje: ", mensajeAEnviar)
+        print("\n")
 
 
 if __name__ == "__main__":
