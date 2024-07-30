@@ -2,18 +2,19 @@ package main
 
 import (
 	"fmt"
+	"net"
 	"strconv"
 )
 
-func crc32(data string) uint32 {
+func crc32Manual(data string) uint32 {
 	crc := uint32(0xFFFFFFFF)
 	polynomial := uint32(0xEDB88320)
 
 	for i := 0; i < len(data); i += 8 {
-		byte, _ := strconv.ParseUint(data[i:i+8], 2, 8)
+		byte, _ := strconv.ParseUint(data[i:i+8], 2, 32)
 		crc ^= uint32(byte)
 		for j := 0; j < 8; j++ {
-			if crc&1 == 1 {
+			if crc&1 != 0 {
 				crc = (crc >> 1) ^ polynomial
 			} else {
 				crc >>= 1
@@ -24,30 +25,46 @@ func crc32(data string) uint32 {
 	return crc ^ 0xFFFFFFFF
 }
 
-func binaryToData(binaryStr string) []byte {
-	byteArray := make([]byte, len(binaryStr)/8)
-	for i := 0; i < len(binaryStr); i += 8 {
-		byteVal, _ := strconv.ParseUint(binaryStr[i:i+8], 2, 8)
-		byteArray[i/8] = byte(byteVal)
-	}
-	return byteArray
-}
-
 func main() {
-	var inputMsg string
-	fmt.Println("Ingrese el mensaje codificado en binario: ")
-	fmt.Scanln(&inputMsg)
+	addr := net.UDPAddr{
+		Port: 12345,
+		IP:   net.ParseIP("127.0.0.1"),
+	}
 
-	message := inputMsg[:len(inputMsg)-32]
-	receivedCrcBin := inputMsg[len(inputMsg)-32:]
-	receivedCrc, _ := strconv.ParseUint(receivedCrcBin, 2, 32)
+	conn, err := net.ListenUDP("udp", &addr)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer conn.Close()
 
-	calculatedCrc := crc32(message)
-	if calculatedCrc == uint32(receivedCrc) {
-		decodedMessage := binaryToData(message)
-		fmt.Println("No se detectaron errores. Mensaje original: ")
-		fmt.Println(string(decodedMessage))
-	} else {
-		fmt.Println("Se detectaron errores.")
+	buffer := make([]byte, 1024)
+	for {
+		n, addr, err := conn.ReadFromUDP(buffer)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		receivedMsg := string(buffer[:n])
+		data := receivedMsg[:len(receivedMsg)-32]
+		receivedCrcStr := receivedMsg[len(receivedMsg)-32:]
+		receivedCrc, _ := strconv.ParseUint(receivedCrcStr, 2, 32)
+		computedCrc := crc32Manual(data)
+
+		response := "valid"
+		if uint32(receivedCrc) != computedCrc {
+			response = "invalid"
+		}
+
+		// Send response back to encoder
+		conn.WriteToUDP([]byte(response), addr)
+
+		fmt.Println("Mensaje recibido: ", data)
+		if response == "valid" {
+			fmt.Println("Mensaje sin errores")
+		} else {
+			fmt.Println("Errores detectados")
+		}
 	}
 }
