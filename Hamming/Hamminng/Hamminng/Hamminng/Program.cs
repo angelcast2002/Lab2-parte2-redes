@@ -90,12 +90,19 @@ public class HammingDecoder
                 int bytesRead;
                 while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) != 0)
                 {
+                    Console.WriteLine("------------------------------------");
                     string receivedMessage = Encoding.UTF8.GetString(buffer, 0, bytesRead);
                     Console.WriteLine("Mensaje recibido: " + receivedMessage);
 
                     string decodedBits = Decode(receivedMessage);
                     string decodedMessage = BinarioATexto(decodedBits);
                     Console.WriteLine("Mensaje decodificado: " + decodedMessage);
+
+                    // Enviamos la respuesta al cliente (indicar mensaje recibido)
+                    byte[] response = Encoding.UTF8.GetBytes(decodedMessage);
+                    stream.Write(response, 0, response.Length);
+
+
                 }
             }
         }
